@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Payoff Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Optional: Add some basic custom styles if needed, but prefer Tailwind */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            padding: 20px;
+        }
+        .scenario-box {
+            background-color: #ffffff;
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 1.5rem; /* p-6 */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+        }
+        input[type="number"] {
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.25rem; /* rounded-md */
+            padding: 0.5rem 0.75rem; /* px-3 py-2 */
+            width: 100%;
+            box-sizing: border-box; /* Ensure padding doesn't add to width */
+        }
+        button {
+            /* Tailwind classes handle most styling */
+            transition: background-color 0.2s ease-in-out;
+        }
+        button:hover {
+             background-color: #1d4ed8; /* blue-700 */
+        }
+        /* Make canvas containers responsive */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px; /* Adjust height as needed */
+            margin-bottom: 2rem; /* Add space between charts */
+        }
+         .savings-text {
+             margin-top: 0.5rem;
+             font-size: 0.875rem; /* text-sm */
+             color: #4b5563; /* gray-600 */
+         }
+         .total-benefit-text {
+             margin-top: 0.5rem;
+             font-size: 1rem; /* text-base */
+             font-weight: 500; /* font-medium */
+             color: #1f2937; /* gray-800 */
+         }
+         /* Adjust grid for 5 scenarios on larger screens */
+         @media (min-width: 1024px) {
+             .scenario-grid {
+                 grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 per row on large screens */
+             }
+         }
+          @media (min-width: 1280px) {
+             .scenario-grid {
+                 grid-template-columns: repeat(5, minmax(0, 1fr)); /* 5 per row on extra large screens */
+             }
+         }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="container mx-auto p-4 max-w-7xl"> <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Debt Payoff Calculator</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:scenario-grid gap-6 mb-8"> <div class="scenario-box">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Scenario 1</h2>
+                <div class="mb-4">
+                    <label for="debt1" class="block text-sm font-medium text-gray-700 mb-1">Initial Debt Amount ($)</label>
+                    <input type="number" id="debt1" value="12000" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="paydown1" class="block text-sm font-medium text-gray-700 mb-1">One-Time Paydown ($)</label>
+                    <input type="number" id="paydown1" value="0" class="form-input" min="0" step="any">
+                </div>
+                <div class="mb-4">
+                    <label for="rate1" class="block text-sm font-medium text-gray-700 mb-1">Annual Interest Rate (%)</label>
+                    <input type="number" id="rate1" value="22.5" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="introRateMonths1" class="block text-sm font-medium text-gray-700 mb-1">Intro 0% Rate Months</label>
+                    <input type="number" id="introRateMonths1" value="0" class="form-input" min="0" step="1">
+                 </div>
+                 <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Compounding Frequency</label>
+                    <p class="text-sm text-gray-500">Assumed Monthly for calculation</p>
+                 </div>
+                <div class="mb-4">
+                    <label for="payment1" class="block text-sm font-medium text-gray-700 mb-1">Monthly Payment ($)</label>
+                    <input type="number" id="payment1" value="500" class="form-input" min="0" step="any">
+                </div>
+                <div id="result1" class="mt-4 text-lg font-medium text-gray-800"></div>
+                <div id="interest1" class="mt-1 text-sm text-gray-600"></div>
+                 <div id="potentialSavings1" class="savings-text"></div>
+                 <div id="totalBenefit1" class="total-benefit-text"></div>
+            </div>
+
+            <div class="scenario-box">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Scenario 2</h2>
+                 <div class="mb-4">
+                    <label for="debt2" class="block text-sm font-medium text-gray-700 mb-1">Initial Debt Amount ($)</label>
+                    <input type="number" id="debt2" value="12000" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="paydown2" class="block text-sm font-medium text-gray-700 mb-1">One-Time Paydown ($)</label>
+                    <input type="number" id="paydown2" value="800" class="form-input" min="0" step="any">
+                </div>
+                <div class="mb-4">
+                    <label for="rate2" class="block text-sm font-medium text-gray-700 mb-1">Annual Interest Rate (%)</label>
+                    <input type="number" id="rate2" value="22.5" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="introRateMonths2" class="block text-sm font-medium text-gray-700 mb-1">Intro 0% Rate Months</label>
+                    <input type="number" id="introRateMonths2" value="0" class="form-input" min="0" step="1">
+                 </div>
+                 <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Compounding Frequency</label>
+                    <p class="text-sm text-gray-500">Assumed Monthly for calculation</p>
+                 </div>
+                <div class="mb-4">
+                    <label for="payment2" class="block text-sm font-medium text-gray-700 mb-1">Monthly Payment ($)</label>
+                    <input type="number" id="payment2" value="500" class="form-input" min="0" step="any">
+                </div>
+                <div id="result2" class="mt-4 text-lg font-medium text-gray-800"></div>
+                <div id="interest2" class="mt-1 text-sm text-gray-600"></div>
+                 <div id="potentialSavings2" class="savings-text"></div>
+                 <div id="totalBenefit2" class="total-benefit-text"></div>
+            </div>
+
+            <div class="scenario-box">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Scenario 3</h2>
+                 <div class="mb-4">
+                    <label for="debt3" class="block text-sm font-medium text-gray-700 mb-1">Initial Debt Amount ($)</label>
+                    <input type="number" id="debt3" value="12000" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="paydown3" class="block text-sm font-medium text-gray-700 mb-1">One-Time Paydown ($)</label>
+                    <input type="number" id="paydown3" value="0" class="form-input" min="0" step="any">
+                </div>
+                <div class="mb-4">
+                    <label for="rate3" class="block text-sm font-medium text-gray-700 mb-1">Annual Interest Rate (%)</label>
+                    <input type="number" id="rate3" value="12" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="introRateMonths3" class="block text-sm font-medium text-gray-700 mb-1">Intro 0% Rate Months</label>
+                    <input type="number" id="introRateMonths3" value="0" class="form-input" min="0" step="1">
+                 </div>
+                 <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Compounding Frequency</label>
+                    <p class="text-sm text-gray-500">Assumed Monthly for calculation</p>
+                 </div>
+                <div class="mb-4">
+                    <label for="payment3" class="block text-sm font-medium text-gray-700 mb-1">Monthly Payment ($)</label>
+                    <input type="number" id="payment3" value="500" class="form-input" min="0" step="any">
+                </div>
+                <div id="result3" class="mt-4 text-lg font-medium text-gray-800"></div>
+                <div id="interest3" class="mt-1 text-sm text-gray-600"></div>
+                 <div id="potentialSavings3" class="savings-text"></div>
+                 <div id="totalBenefit3" class="total-benefit-text"></div>
+            </div>
+
+             <div class="scenario-box">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Scenario 4</h2>
+                <div class="mb-4">
+                    <label for="debt4" class="block text-sm font-medium text-gray-700 mb-1">Initial Debt Amount ($)</label>
+                    <input type="number" id="debt4" value="12000" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="paydown4" class="block text-sm font-medium text-gray-700 mb-1">One-Time Paydown ($)</label>
+                    <input type="number" id="paydown4" value="800" class="form-input" min="0" step="any">
+                </div>
+                <div class="mb-4">
+                    <label for="rate4" class="block text-sm font-medium text-gray-700 mb-1">Annual Interest Rate (%)</label>
+                    <input type="number" id="rate4" value="12" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="introRateMonths4" class="block text-sm font-medium text-gray-700 mb-1">Intro 0% Rate Months</label>
+                    <input type="number" id="introRateMonths4" value="0" class="form-input" min="0" step="1">
+                 </div>
+                 <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Compounding Frequency</label>
+                    <p class="text-sm text-gray-500">Assumed Monthly for calculation</p>
+                 </div>
+                <div class="mb-4">
+                    <label for="payment4" class="block text-sm font-medium text-gray-700 mb-1">Monthly Payment ($)</label>
+                    <input type="number" id="payment4" value="500" class="form-input" min="0" step="any">
+                </div>
+                <div id="result4" class="mt-4 text-lg font-medium text-gray-800"></div>
+                <div id="interest4" class="mt-1 text-sm text-gray-600"></div>
+                 <div id="potentialSavings4" class="savings-text"></div>
+                 <div id="totalBenefit4" class="total-benefit-text"></div>
+            </div>
+
+            <div class="scenario-box">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Scenario 5</h2>
+                <div class="mb-4">
+                    <label for="debt5" class="block text-sm font-medium text-gray-700 mb-1">Initial Debt Amount ($)</label>
+                    <input type="number" id="debt5" value="12000" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="paydown5" class="block text-sm font-medium text-gray-700 mb-1">One-Time Paydown ($)</label>
+                    <input type="number" id="paydown5" value="0" class="form-input" min="0" step="any">
+                </div>
+                <div class="mb-4">
+                    <label for="rate5" class="block text-sm font-medium text-gray-700 mb-1">Standard Annual Interest Rate (%)</label>
+                    <input type="number" id="rate5" value="22.5" class="form-input" min="0" step="any">
+                </div>
+                 <div class="mb-4">
+                    <label for="introRateMonths5" class="block text-sm font-medium text-gray-700 mb-1">Intro 0% Rate Months</label>
+                    <input type="number" id="introRateMonths5" value="9" class="form-input" min="0" step="1">
+                 </div>
+                 <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Compounding Frequency</label>
+                    <p class="text-sm text-gray-500">Assumed Monthly for calculation</p>
+                 </div>
+                <div class="mb-4">
+                    <label for="payment5" class="block text-sm font-medium text-gray-700 mb-1">Monthly Payment ($)</label>
+                    <input type="number" id="payment5" value="500" class="form-input" min="0" step="any">
+                </div>
+                <div id="result5" class="mt-4 text-lg font-medium text-gray-800"></div>
+                <div id="interest5" class="mt-1 text-sm text-gray-600"></div>
+                 <div id="potentialSavings5" class="savings-text"></div>
+                 <div id="totalBenefit5" class="total-benefit-text"></div>
+            </div>
+        </div>
+
+        <div class="text-center mb-8">
+            <button id="calculateBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                Calculate Payoff
+            </button>
+        </div>
+
+        <div class="scenario-box mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 text-center">Debt Balance Over Time</h2>
+            <div class="chart-container">
+                <canvas id="debtBalanceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="scenario-box mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 text-center">Total Interest Paid</h2>
+            <div class="chart-container">
+                <canvas id="totalInterestChart"></canvas>
+            </div>
+        </div>
+
+        <div class="scenario-box">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 text-center">Total Financial Benefit (vs Longest Payoff)</h2>
+            <div class="chart-container">
+                <canvas id="totalBenefitBreakdownChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let debtBalanceChart; // Variable to hold the Debt Balance Chart.js instance
+        let totalInterestChart; // Variable to hold the Total Interest Chart.js instance
+        let totalBenefitBreakdownChart; // Variable to hold the Total Benefit Breakdown Chart.js instance
+
+
+        // Function to calculate debt payoff time and total interest
+        function calculatePayoff(initialDebt, oneTimePaydown, annualRate, monthlyPayment, introRateMonths = 0) { // Added introRateMonths parameter
+            // Ensure inputs are valid numbers
+            if (isNaN(initialDebt) || isNaN(oneTimePaydown) || isNaN(annualRate) || isNaN(monthlyPayment) || isNaN(introRateMonths) || initialDebt <= 0 || monthlyPayment <= 0 || oneTimePaydown < 0 || introRateMonths < 0) {
+                return { months: null, totalInterest: null, balanceHistory: [], monthlyPayment: monthlyPayment, error: "Please enter valid positive numbers for Initial Debt Amount and Monthly Payment. One-Time Paydown and Intro Rate Months cannot be negative." };
+            }
+
+            // Apply the one-time paydown to the initial debt
+            let debtAfterPaydown = initialDebt - oneTimePaydown;
+            let totalInterest = 0;
+            const balanceHistory = [{ month: 0, balance: initialDebt }]; // Start history with initial debt at month 0
+             if (oneTimePaydown > 0) {
+                 balanceHistory.push({ month: 0, balance: debtAfterPaydown }); // Add balance after paydown at month 0
+             }
+
+
+            // If the one-time paydown is more than the initial debt
+            if (debtAfterPaydown <= 0) {
+                return { months: 0, totalInterest: 0, balanceHistory: balanceHistory, monthlyPayment: monthlyPayment, error: "Debt paid off with one-time payment." };
+            }
+
+            // Convert standard annual rate percentage to a monthly decimal rate
+            const standardMonthlyRate = (annualRate / 100) / 12;
+            const introMonthlyRate = 0; // 0% monthly rate for intro period
+
+
+            let balance = debtAfterPaydown;
+            let months = 0;
+            const maxMonths = 1200; // Prevent infinite loops for edge cases (100 years)
+
+            // Iteratively calculate the payoff month by month
+            while (balance > 0 && months < maxMonths) {
+                const currentMonthlyRate = months < introRateMonths ? introMonthlyRate : standardMonthlyRate;
+
+                 // If monthly payment is less than the monthly interest on the principal after intro period, it will never be paid off
+                 if (months >= introRateMonths && monthlyPayment <= balance * currentMonthlyRate && annualRate > 0) {
+                     return { months: null, totalInterest: null, balanceHistory: balanceHistory, monthlyPayment: monthlyPayment, error: "Monthly payment is less than monthly interest after intro period. Debt will never be paid off." };
+                }
+
+
+                const interest = balance * currentMonthlyRate;
+                balance = balance + interest - monthlyPayment;
+                totalInterest += interest;
+                months++;
+                balanceHistory.push({ month: months, balance: Math.max(0, balance) }); // Add balance to history, ensure it doesn't go below 0
+            }
+
+            if (months >= maxMonths) {
+                 return { months: null, totalInterest: null, balanceHistory: balanceHistory, monthlyPayment: monthlyPayment, error: `Calculation exceeded ${maxMonths} months. Check inputs.` };
+            }
+
+            return { months: months, totalInterest: totalInterest, balanceHistory: balanceHistory, monthlyPayment: monthlyPayment, error: null };
+        }
+
+        // Function to draw or update the debt balance chart
+        function updateDebtBalanceChart(scenarioData) {
+            const ctx = document.getElementById('debtBalanceChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (debtBalanceChart) {
+                debtBalanceChart.destroy();
+            }
+
+            const labels = [];
+            // Determine the maximum number of months across all scenarios for chart labels
+            const maxMonths = Math.max(...scenarioData.map(data => data.balanceHistory.length > 0 ? data.balanceHistory[data.balanceHistory.length - 1].month : 0));
+            for (let i = 0; i <= maxMonths; i++) {
+                labels.push(i);
+            }
+
+             const borderColors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#6366f1']; // Added Indigo for Scenario 5
+             const backgroundColors = borderColors.map(color => color + '40'); // Add transparency
+
+
+            debtBalanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: scenarioData.map((data, index) => ({
+                        label: `Scenario ${index + 1}`,
+                        // Map balance history to data points, ensuring all months up to maxMonths are included
+                         data: labels.map(month => {
+                            const historyPoint = data.balanceHistory.find(point => point.month === month);
+                            return historyPoint ? historyPoint.balance : (data.balanceHistory.length > 0 ? data.balanceHistory[data.balanceHistory.length - 1].balance : 0); // Hold the last balance if payoff is earlier
+                         }),
+                        borderColor: borderColors[index],
+                        backgroundColor: backgroundColors[index],
+                        fill: false,
+                        tension: 0.1, // Add some curve to the lines
+                        pointRadius: 0 // Hide points for cleaner lines
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Allow container to control size
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Months'
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                autoSkip: true, // Automatically skip ticks to prevent overlap
+                                maxTicksLimit: 20 // Limit the number of ticks displayed
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Remaining Balance ($)'
+                            },
+                             beginAtZero: true // Start y-axis at 0
+                        }
+                    },
+                     plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += `$${context.raw.toFixed(2)}`;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to draw or update the total interest paid chart
+        function updateTotalInterestChart(scenarioData) {
+             const ctx = document.getElementById('totalInterestChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (totalInterestChart) {
+                totalInterestChart.destroy();
+            }
+
+            const labels = scenarioData.map((_, index) => `Scenario ${index + 1}`);
+            const interestAmounts = scenarioData.map(data => data.totalInterest !== null ? data.totalInterest : 0);
+            const backgroundColors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#6366f1']; // Added Indigo for Scenario 5
+
+             totalInterestChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Interest Paid ($)',
+                        data: interestAmounts,
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(color => color.replace('40', '')), // Solid border color
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Total Interest Paid ($)'
+                            }
+                        }
+                    },
+                     plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += `$${context.raw.toFixed(2)}`;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+         // Function to draw or update the total financial benefit breakdown chart
+         function updateTotalBenefitBreakdownChart(scenarioData, longestScenarioInterest, maxMonths) {
+             const ctx = document.getElementById('totalBenefitBreakdownChart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (totalBenefitBreakdownChart) {
+                totalBenefitBreakdownChart.destroy();
+            }
+
+            const labels = scenarioData.map((_, index) => `Scenario ${index + 1}`);
+
+            const potentialSavingsFreedCashData = scenarioData.map(result => {
+                 if (result.months !== null && maxMonths !== null && result.months < maxMonths) {
+                    const extraMonths = maxMonths - result.months;
+                    return extraMonths * result.monthlyPayment;
+                 }
+                 return 0; // No potential savings if it's the longest or an invalid scenario
+            });
+
+            const interestSavedData = scenarioData.map(result => {
+                 if (result.totalInterest !== null) {
+                     return longestScenarioInterest - result.totalInterest;
+                 }
+                 return 0; // No interest saved if total interest is not calculated
+            });
+
+             totalBenefitBreakdownChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Potential Savings (Freed Cash Flow)',
+                            data: potentialSavingsFreedCashData,
+                            backgroundColor: '#3b82f6', // Blue
+                            borderColor: '#3b82f6',
+                            borderWidth: 1
+                        },
+                         {
+                            label: 'Interest Saved',
+                            data: interestSavedData,
+                            backgroundColor: '#22c55e', // Green
+                            borderColor: '#22c55e',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true, // Stack bars on the x-axis
+                            title: {
+                                display: true,
+                                text: 'Scenario'
+                            }
+                        },
+                        y: {
+                            stacked: true, // Stack bars on the y-axis
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Total Financial Benefit ($)'
+                            }
+                        }
+                    },
+                     plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += `$${context.raw.toFixed(2)}`;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+         }
+
+
+        // Event listener for the calculate button
+        document.getElementById('calculateBtn').addEventListener('click', () => {
+            // Get input values for each scenario
+            const debt1 = parseFloat(document.getElementById('debt1').value);
+            const paydown1 = parseFloat(document.getElementById('paydown1').value);
+            const rate1 = parseFloat(document.getElementById('rate1').value);
+            const introRateMonths1 = parseInt(document.getElementById('introRateMonths1').value);
+            const payment1 = parseFloat(document.getElementById('payment1').value);
+
+            const debt2 = parseFloat(document.getElementById('debt2').value);
+            const paydown2 = parseFloat(document.getElementById('paydown2').value);
+            const rate2 = parseFloat(document.getElementById('rate2').value);
+            const introRateMonths2 = parseInt(document.getElementById('introRateMonths2').value);
+            const payment2 = parseFloat(document.getElementById('payment2').value);
+
+            const debt3 = parseFloat(document.getElementById('debt3').value);
+            const paydown3 = parseFloat(document.getElementById('paydown3').value);
+            const rate3 = parseFloat(document.getElementById('rate3').value);
+            const introRateMonths3 = parseInt(document.getElementById('introRateMonths3').value);
+            const payment3 = parseFloat(document.getElementById('payment3').value);
+
+            const debt4 = parseFloat(document.getElementById('debt4').value); // Get input for Scenario 4
+            const paydown4 = parseFloat(document.getElementById('paydown4').value); // Get input for Scenario 4
+            const rate4 = parseFloat(document.getElementById('rate4').value); // Get input for Scenario 4
+            const introRateMonths4 = parseInt(document.getElementById('introRateMonths4').value);
+            const payment4 = parseFloat(document.getElementById('payment4').value); // Get input for Scenario 4
+
+             const debt5 = parseFloat(document.getElementById('debt5').value); // Get input for Scenario 5
+            const paydown5 = parseFloat(document.getElementById('paydown5').value); // Get input for Scenario 5
+            const rate5 = parseFloat(document.getElementById('rate5').value); // Get input for Scenario 5
+            const introRateMonths5 = parseInt(document.getElementById('introRateMonths5').value); // Get input for Scenario 5 intro rate months
+            const payment5 = parseFloat(document.getElementById('payment5').value); // Get input for Scenario 5
+
+
+            // Calculate results for each scenario
+            const result1 = calculatePayoff(debt1, paydown1, rate1, payment1, introRateMonths1);
+            const result2 = calculatePayoff(debt2, paydown2, rate2, payment2, introRateMonths2);
+            const result3 = calculatePayoff(debt3, paydown3, rate3, payment3, introRateMonths3);
+            const result4 = calculatePayoff(debt4, paydown4, rate4, payment4, introRateMonths4);
+            const result5 = calculatePayoff(debt5, paydown5, rate5, payment5, introRateMonths5); // Calculate for Scenario 5
+
+            // Store results in an array for chart updates and savings calculation
+            const scenarioResults = [result1, result2, result3, result4, result5]; // Include Scenario 5 result
+
+            // Find the maximum number of months among all valid scenarios
+            const validMonths = scenarioResults
+                .filter(result => result.months !== null)
+                .map(result => result.months);
+            const maxMonths = validMonths.length > 0 ? Math.max(...validMonths) : 0;
+
+            // Find the scenario with the longest payoff time to use as a baseline for interest savings
+            let longestScenarioInterest = 0;
+            const longestScenario = scenarioResults.find(result => result.months === maxMonths);
+            if (longestScenario && longestScenario.totalInterest !== null) {
+                longestScenarioInterest = longestScenario.totalInterest;
+            }
+
+
+            // Display results, total interest, potential savings, and total benefit
+            scenarioResults.forEach((result, index) => {
+                const resultElement = document.getElementById(`result${index + 1}`);
+                const interestElement = document.getElementById(`interest${index + 1}`);
+                const potentialSavingsElement = document.getElementById(`potentialSavings${index + 1}`);
+                const totalBenefitElement = document.getElementById(`totalBenefit${index + 1}`);
+
+                if (result.error) {
+                    resultElement.innerText = result.error;
+                    interestElement.innerText = '';
+                    potentialSavingsElement.innerText = '';
+                    totalBenefitElement.innerText = '';
+                } else {
+                    resultElement.innerText = `Estimated payoff in ${result.months} months after one-time payment.`;
+                    interestElement.innerText = `Total Interest Paid: $${result.totalInterest.toFixed(2)}`;
+
+                    // Calculate potential savings from freed-up cash flow and interest saved
+                    let potentialSavings = 0;
+                    let interestSaved = 0;
+                    let totalBenefit = 0;
+
+                    if (result.months !== null && maxMonths !== null && result.months < maxMonths) {
+                        const extraMonths = maxMonths - result.months;
+                        potentialSavings = extraMonths * result.monthlyPayment;
+                         // Calculate interest saved compared to the longest scenario
+                        if (result.totalInterest !== null) {
+                             interestSaved = longestScenarioInterest - result.totalInterest;
+                        }
+                        totalBenefit = potentialSavings + interestSaved;
+
+                        potentialSavingsElement.innerText = `Potential Savings (freed cash flow): $${potentialSavings.toFixed(2)} over ${extraMonths} months`;
+                        totalBenefitElement.innerText = `Total Financial Benefit (vs longest scenario): $${totalBenefit.toFixed(2)} (Interest Saved: $${interestSaved.toFixed(2)})`;
+
+                    } else if (result.months === maxMonths && result.months !== null) {
+                         potentialSavingsElement.innerText = ''; // No extra savings if it's the longest or equal payoff
+                         totalBenefitElement.innerText = `Total Financial Benefit (vs longest scenario): $0.00`; // No benefit compared to itself
+                    } else {
+                         potentialSavingsElement.innerText = '';
+                         totalBenefitElement.innerText = '';
+                    }
+                }
+            });
+
+
+            // Update the charts with the calculated data
+            updateDebtBalanceChart(scenarioResults);
+            updateTotalInterestChart(scenarioResults);
+            updateTotalBenefitBreakdownChart(scenarioResults, longestScenarioInterest, maxMonths); // Pass longestScenarioInterest and maxMonths
+        });
+
+        // Initial calculation on page load with default values
+         window.onload = function() {
+             document.getElementById('calculateBtn').click();
+         };
+
+    </script>
+
+</body>
+</html>
